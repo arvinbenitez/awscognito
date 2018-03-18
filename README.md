@@ -1,4 +1,5 @@
-# AwscognitoDemoAb
+# AWS Cognito User Pool Demo 
+## by Arvin Benitez
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.2.
 
@@ -6,22 +7,44 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-## Code scaffolding
+## How It Works
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### Configure the Cognito User Pool Using the AWS Console
 
-## Build
+* Login to the AWS Console, navigate to the Cognito Service and create a new user pool
+* Settings
+  * Provide a meaningful pool name
+  * You can either 'Review the Defaults' or Step Through the Settings
+  * Go to 'Attributes' and configure the necessary attributes. 
+    * User Name
+    * Select any standard attributes that you want to mark as required (e.g. GivenName, Phone, etc)
+    * Add any custom attributes (if required)
+  * Go to 'App Clients' and create an application client. For Javascript Apps, make sure that 'Generate Client Secret' is not ticked.
+    * Enable the USER_PASSWORD_AUTH option. This would allow you to initiate the authentication using username and password.
+  * Take note of the following details that you need on your application:
+    * Pool Id. This will be in the format **eu-west-1_XXXXXX**
+    * App Client Id. 
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
+### Configure the API Gateway Using the AWS Console
 
-## Running unit tests
+Assuming you already have an API Gateway resource pointing to either a Web Api or an AWS Lambda, the Cognito User Pool can be used to authorize incoming requests by requiring an authorization token to be passed to the API request.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+* From the API Gateway, navigate to the API.
+* On the Authorizers, create a new 'Cognito' authorizer. Choose the Cognito User Pool created.
+* Define the header key to associate the token with
+* Once the authorizer has been associated to the API, go into each individual resource. Edit the method and set the Authorizer to be the Cognito Authorizer created in the previous step.
+* Optional? Enable CORS on the resource.
+* Re-deploy the API for the changes to take effect.
 
-## Running end-to-end tests
+### How Does The Sample Code Work?
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+The sample code uses the [AWS Javascript SDK](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/CognitoIdentityServiceProvider.html). 
+* The Cognito User Pool configuration allows the user to self-register using **CognitoIdentityServiceProvider.signup()** api
+* After registration, the user receives a confirmation code on the specified email. The user status would be 'UNCONFIRMED' at this point.
+* The user would then need to confirm the email by entering the 'confirmation code', calling the **CognitoIdentityServiceProvider.confirmSignup()**. If successful, the users status would be 'CONFIRMED' at this stage.
+* At this point, the user can then signin. The **CognitoIdentityService.initiateAuth()** is then called to initiate the authentication process. Note that this call requires that an AWS Credential be passed (e.g. using AccessKey and SecretAccessKey).
+  * For this sample app, the AccessKey and Secret are defined in the CognitoService. This is unsecure. In real apps, we may just move this behind the API Gateway and add a lambda function to do the calls for InitiateAuth.
+* This should give the user an AccessToken at this point. The IdToken can then be passed into the API Header which should authorize the call.
 
-## Further help
+If MFA is enabled, the call to InitiateAuth should return a 'challenge' to the user to provide an MFA - can either be SMS Token or Time-Based Token. Only after a successful response to the challenge will the token be returned.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).

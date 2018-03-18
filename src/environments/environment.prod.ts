@@ -1,3 +1,9 @@
 export const environment = {
-  production: true
+  production: true,
+  apiGatewayUrl: 'REPLACETHIS',
+  cognitoClientId: 'REPLACETHIS',
+  cognitoPoolId: 'REPLACETHIS',
+  accessKey: 'REPLACETHIS',
+  secretAccessKey: 'REPLACETHIS',
+  awsRegion: 'REPLACETHIS'
 };
